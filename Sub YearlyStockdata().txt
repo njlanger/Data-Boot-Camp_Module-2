@@ -1,0 +1,130 @@
+Sub YearlyStockdata()
+    'Created by Neil J. Langer September 2023
+    
+'Defining data type(s)
+Dim ws As Worksheet
+Dim LastRow, CurrentYear, OutputRow As Long
+Dim YearEnd As Date
+Dim YearlyChange, OpenPrice, ClosePrice, TotalVolume, MaxIncrease, MaxDecrease, MaxVolume As Double
+Dim Ticker, MaxIncreaseTicker, MaxDecreaseTicker, MaxVolumeTicker As String
+Dim formatRange As Range
+
+Application.ScreenUpdating = False
+
+'Loop through all the worksheets in the workbook
+For Each ws In ThisWorkbook.Worksheets
+
+'Initialize variables to track maximum values and their respective tickers for each sheet
+MaxIncrease = 0
+MaxDecrease = 0
+MaxVolume = 0
+MaxIncreaseTicker = ""
+MaxDecreaseTicker = ""
+MaxVolumeTicker = ""
+
+'Find the last row of data
+LastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+'Initialize variables
+TotalVolume = 0
+OutputRow = 2
+
+'Add headers for results
+ws.Cells(1, 9).Value = "Ticker"
+ws.Cells(1, 10).Value = "Yearly $ Change"
+ws.Cells(1, 11).Value = "Percentage Change"
+ws.Cells(1, 12).Value = "Total Volume"
+ws.Cells(1, 14).Value = "Category"
+ws.Cells(1, 15).Value = "Ticker"
+ws.Cells(1, 16).Value = "Value"
+
+'Loop through the rows starting from the second row
+For i = 2 To LastRow
+'Check if we've moved to a new security (ticker)
+   If Ticker <> ws.Cells(i, 1).Value Then
+'Calculate YearlyChange and PercentageChange for the previous security
+   If TotalVolume <> 0 Then
+      YearlyChange = ClosePrice - OpenPrice
+   If OpenPrice <> 0 Then
+      percentageChange = (YearlyChange / OpenPrice) * 100
+   Else
+      percentageChange = 0
+   End If
+
+                    
+'Output the yearly data for the previous security
+ws.Cells(OutputRow, 9).Value = Ticker
+ws.Cells(OutputRow, 10).Value = YearlyChange
+ws.Cells(OutputRow, 11).Value = percentageChange
+ws.Cells(OutputRow, 12).Value = TotalVolume
+
+                    
+'Apply conditional formatting to Yearly $ Change and % change columns
+                    
+ Set formatRange = ws.Cells(OutputRow, 10)
+ 
+   If YearlyChange > 0 Then
+      formatRange.Interior.Color = RGB(0, 255, 0) 'Green color for positive returns
+   ElseIf YearlyChange < 0 Then
+      formatRange.Interior.Color = RGB(255, 0, 0) 'Red color for negative returns
+   End If
+
+Set formatRange = ws.Cells(OutputRow, 11)
+ 
+   If YearlyChange > 0 Then
+      formatRange.Interior.Color = RGB(0, 255, 0) 'Green color for positive returns
+   ElseIf YearlyChange < 0 Then
+      formatRange.Interior.Color = RGB(255, 0, 0) 'Red color for negative returns
+   End If
+
+OutputRow = OutputRow + 1
+
+'Check for maximum percent increase and decrease
+   If percentageChange > MaxIncrease Then
+      MaxIncrease = percentageChange
+      MaxIncreaseTicker = Ticker
+   ElseIf percentageChange < MaxDecrease Or MaxDecrease = 0 Then
+      MaxDecrease = percentageChange
+      MaxDecreaseTicker = Ticker
+   End If
+
+'Check for maximum total volume
+   If TotalVolume > MaxVolume Then
+      MaxVolume = TotalVolume
+      MaxVolumeTicker = Ticker
+   End If
+                
+   End If
+
+'Reset variables for the new security
+Ticker = ws.Cells(i, 1).Value
+OpenPrice = ws.Cells(i, 3).Value
+TotalVolume = 0
+            
+End If
+            
+'Update variables for the current row
+ClosePrice = ws.Cells(i, 6).Value
+
+'Add to the total volume for the current security
+TotalVolume = TotalVolume + ws.Cells(i, 7).Value
+        
+Next i
+
+'Output the results for the current sheet in three columns
+ws.Cells(2, 14).Value = "Greatest % Increase"
+ws.Cells(2, 15).Value = MaxIncreaseTicker
+ws.Cells(2, 16).Value = Format(MaxIncrease, "0.00") & "%"
+ws.Cells(3, 14).Value = "Greatest % Decrease"
+ws.Cells(3, 15).Value = MaxDecreaseTicker
+ws.Cells(3, 16).NumberFormat = "0.00%"
+ws.Cells(3, 16).Value = MaxDecrease / 100
+ws.Cells(4, 14).Value = "Greatest Total Volume"
+ws.Cells(4, 15).Value = MaxVolumeTicker
+ws.Cells(4, 16).Value = MaxVolume
+    
+    
+Next ws
+
+
+End Sub
